@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jannat - Your Personal Paradise of Photos</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .gradient-text {
+            background: linear-gradient(45deg, #FF006E, #8338EC);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .card-container {
+            aspect-ratio: 9/16;
+            perspective: 1000px;
+        }
+
+        .photo-card {
+            aspect-ratio: 9/16;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .photo-card:hover {
+            transform: rotateY(15deg) rotateX(5deg) scale(1.05);
+        }
+
+        .photo-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 16px;
+        }
+
+        .card-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255, 0, 110, 0.3), rgba(131, 56, 236, 0.3));
+            opacity: 0;
+            transition: opacity 0.3s;
+            border-radius: 16px;
+        }
+
+        .photo-card:hover .card-overlay {
+            opacity: 1;
+        }
+
+        .like-button {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .like-button:hover {
+            background: rgba(255, 0, 110, 0.6);
+            transform: scale(1.1);
+        }
+
+        .like-button.liked {
+            background: rgba(255, 0, 110, 0.8);
+            color: white;
+        }
+
+        .sticker-overlay {
+            position: absolute;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .modal {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+        }
+
+        .chat-bubble {
+            max-width: 70%;
+            padding: 8px 12px;
+            border-radius: 18px;
+            margin: 4px 0;
+        }
+
+        .chat-bubble.sent {
+            background: linear-gradient(45deg, #FF006E, #8338EC);
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .chat-bubble.received {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            align-self: flex-start;
+        }
+
+        .upload-zone {
+            border: 2px dashed rgba(255, 0, 110, 0.5);
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.3s;
+        }
+
+        .upload-zone.dragover {
+            border-color: #FF006E;
+            background: rgba(255, 0, 110, 0.1);
+            transform: scale(1.02);
+        }
+
+        .floating-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, #FF006E, #8338EC);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 32px rgba(255, 0, 110, 0.3);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .floating-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 48px rgba(255, 0, 110, 0.5);
+        }
+
+        .group-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            transition: all 0.3s;
+        }
+
+        .group-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .password-protected {
+            position: relative;
+        }
+
+        .password-protected::before {
+            content: '\f023';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            color: #FFD700;
+            z-index: 10;
+        }
+
+        .sticker-menu {
+            display: none;
+            position: absolute;
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 100;
+        }
+
+        .sticker-item {
+            width: 40px;
+            height: 40px;
+            margin: 4px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        .sticker-item:hover {
+            transform: scale(1.1);
+        }
+
+        .comment-section {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .scrollbar::-webkit-scrollbar-thumb {
+            background: linear-gradient(45deg, #FF006E, #8338EC);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="text-white">
+    <!-- Header -->
+    <header class="p-6 border-b border-gray-700">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-4xl font-bold gradient-text">✨ Jannat</h1>
+            <nav class="flex space-x-6">
+                <button id="galleryTab" class="tab-btn text-white hover:text-pink-400 transition-colors active">
+                    <i class="fas fa-images mr-2"></i>Gallery
+                </button>
+                <button id="groupsTab" class="tab-btn text-gray-400 hover:text-pink-400 transition-colors">
+                    <i class="fas fa-users mr-2"></i>Groups
+                </button>
+                <button id="chatTab" class="tab-btn text-gray-400 hover:text-pink-400 transition-colors">
+                    <i class="fas fa-comments mr-2"></i>Chat
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Gallery Section -->
+    <div id="gallerySection" class="container mx-auto p-6">
+        <!-- Upload Zone -->
+        <div id="uploadZone" class="upload-zone p-12 text-center mb-8 rounded-2xl cursor-pointer">
+            <i class="fas fa-cloud-upload-alt text-6xl gradient-text mb-4"></i>
+            <h3 class="text-2xl font-bold mb-2">Drop your photos here</h3>
+            <p class="text-gray-400">Or click to browse and select multiple files</p>
+            <input type="file" id="fileInput" multiple accept="image/*" class="hidden">
+        </div>
+
+        <!-- Categories -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold gradient-text">Categories</h2>
+                <button id="addCategoryBtn" class="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 px-4 py-2 rounded-lg transition-all">
+                    <i class="fas fa-plus mr-2"></i>Add Category
+                </button>
+            </div>
+            <div id="categoriesContainer" class="flex flex-wrap gap-4 mb-6">
+                <!-- Categories will be populated here -->
+            </div>
+        </div>
+
+        <!-- Photo Grid -->
+        <div id="photoGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+            <!-- Photos will be populated here -->
+        </div>
+    </div>
+
+    <!-- Groups Section -->
+    <div id="groupsSection" class="container mx-auto p-6 hidden">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-bold gradient-text">Photo Groups</h2>
+            <button id="createGroupBtn" class="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 px-6 py-3 rounded-lg transition-all">
+                <i class="fas fa-plus mr-2"></i>Create Group
+            </button>
+        </div>
+        <div id="groupsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Groups will be populated here -->
+        </div>
+    </div>
+
+    <!-- Chat Section -->
+    <div id="chatSection" class="container mx-auto p-6 hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-96">
+            <!-- Chat List -->
+            <div class="lg:col-span-1 bg-gray-800 rounded-2xl p-4">
+                <h3 class="text-xl font-bold mb-4 gradient-text">Conversations</h3>
+                <div id="chatList" class="space-y-2">
+                    <!-- Chat conversations will be populated here -->
+                </div>
+            </div>
+            
+            <!-- Chat Window -->
+            <div class="lg:col-span-2 bg-gray-800 rounded-2xl p-4 flex flex-col">
+                <div id="chatHeader" class="border-b border-gray-700 pb-4 mb-4">
+                    <h3 class="text-lg font-bold">Select a conversation</h3>
+                </div>
+                <div id="chatMessages" class="flex-1 overflow-y-auto scrollbar mb-4">
+                    <!-- Messages will be populated here -->
+                </div>
+                <div class="flex">
+                    <input type="text" id="messageInput" placeholder="Type a message..." class="flex-1 bg-gray-700 rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                    <button id="sendMessageBtn" class="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 px-6 py-2 rounded-r-lg transition-all">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <div class="floating-btn" id="floatingBtn">
+        <i class="fas fa-plus text-white text-xl"></i>
+    </div>
+
+    <!-- Photo Modal -->
+    <div id="photoModal" class="fixed inset-0 modal hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-2xl max-w-4xl w-full max-h-full overflow-hidden">
+            <div class="flex justify-between items-center p-4 border-b border-gray-700">
+                <h3 id="modalTitle" class="text-xl font-bold">Photo Details</h3>
+                <button id="closeModal" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-4">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 relative">
+                        <img id="modalImage" class="w-full h-auto rounded-lg" />
+                        <div id="stickersContainer">
+                            <!-- Stickers will be added here -->
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <!-- Actions -->
+                        <div class="flex space-x-2">
+                            <button id="likeModalBtn" class="flex-1 bg-gray-700 hover:bg-pink-600 px-4 py-2 rounded-lg transition-colors">
+                                <i class="fas fa-heart mr-2"></i>Like
+                            </button>
+                            <button id="addStickerBtn" class="flex-1 bg-gray-700 hover:bg-purple-600 px-4 py-2 rounded-lg transition-colors">
+                                <i class="fas fa-smile mr-2"></i>Sticker
+                            </button>
+                            <button id="downloadBtn" class="flex-1 bg-gray-700 hover:bg-blue-600 px-4 py-2 rounded-lg transition-colors">
+                                <i class="fas fa-download mr-2"></i>Save
+                            </button>
+                        </div>
+                        
+                        <!-- Comments -->
+                        <div>
+                            <h4 class="font-bold mb-2 gradient-text">Comments</h4>
+                            <div id="commentsContainer" class="comment-section scrollbar space-y-2 mb-4">
+                                <!-- Comments will be populated here -->
+                            </div>
+                            <div class="flex">
+                                <input type="text" id="commentInput" placeholder="Add a comment..." class="flex-1 bg-gray-700 rounded-l-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                                <button id="addCommentBtn" class="bg-gradient-to-r from-pink-600 to-purple-600 px-4 py-2 rounded-r-lg">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sticker Menu -->
+    <div id="stickerMenu" class="sticker-menu">
+        <h4 class="text-sm font-bold mb-2 gradient-text">Choose a Sticker</h4>
+        <div class="grid grid-cols-4 gap-2">
+            <div class="sticker-item bg-red-500 rounded-lg flex items-center justify-center cursor-pointer" data-sticker="❤️">❤️</div>
+            <div class="sticker-item bg-yellow-500 rounded-lg flex items-center justify-center cursor-pointer" data-sticker="😍">😍</div>
+            <div class="sticker-item bg-green-500 rounded-lg flex items-center justify-center cursor-pointer" data-sticker="🔥">🔥</div>
+            <div class="sticker-item bg-purple-500 rounded-lg flex items-center justify-center cursor-pointer" data-sticker="✨">✨</div>
+            <div class="sticker-item bg-blue-500 rounded-lg flex items-center justify-center cursor-pointer" data-sticker="👏">👏</div>
+            <div class="sticker-item bg-pink-500 rounded-lg flex items-center justify-center cursor-pointer" data-sticker="🎉">🎉</div>
+            <div class="sticker-item bg-indigo-500 rounded-lg flex items-center justify-center cursor-pointer" data-sticker="🌟">🌟</div>
+            <div class="sticker-item bg-orange-500 rounded-lg flex items-center justify-center cursor-pointer" data-sticker="💯">💯</div>
+        </div>
+    </div>
+
+    <!-- Create Group Modal -->
+    <div id="createGroupModal" class="fixed inset-0 modal hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-2xl max-w-md w-full p-6">
+            <h3 class="text-xl font-bold mb-4 gradient-text">Create New Group</h3>
+            <form id="createGroupForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Group Name</label>
+                    <input type="text" id="groupNameInput" class="w-full bg-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Description</label>
+                    <textarea id="groupDescInput" class="w-full bg-gray-700 rounded-lg px-4 py-2 h-20 focus:outline-none focus:ring-2 focus:ring-pink-500"></textarea>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="passwordProtectGroup" class="mr-2">
+                    <label class="text-sm">Password protect this group</label>
+                </div>
+                <div id="groupPasswordField" class="hidden">
+                    <label class="block text-sm font-medium mb-2">Password</label>
+                    <input type="password" id="groupPasswordInput" class="w-full bg-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" id="cancelCreateGroup" class="px-4 py-2 text-gray-400 hover:text-white">Cancel</button>
+                    <button type="submit" class="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 px-6 py-2 rounded-lg">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Category Modal -->
+    <div id="addCategoryModal" class="fixed inset-0 modal hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-2xl max-w-md w-full p-6">
+            <h3 class="text-xl font-bold mb-4 gradient-text">Add Category</h3>
+            <form id="addCategoryForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Category Name</label>
+                    <input type="text" id="categoryNameInput" class="w-full bg-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500" required>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="passwordProtectCategory" class="mr-2">
+                    <label class="text-sm">Password protect this category</label>
+                </div>
+                <div id="categoryPasswordField" class="hidden">
+                    <label class="block text-sm font-medium mb-2">Password</label>
+                    <input type="password" id="categoryPasswordInput" class="w-full bg-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" id="cancelAddCategory" class="px-4 py-2 text-gray-400 hover:text-white">Cancel</button>
+                    <button type="submit" class="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 px-6 py-2 rounded-lg">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let photos = JSON.parse(localStorage.getItem('jannat_photos') || '[]');
+        let categories = JSON.parse(localStorage.getItem('jannat_categories') || '[]');
+        let groups = JSON.parse(localStorage.getItem('jannat_groups') || '[]');
+        let conversations = JSON.parse(localStorage.getItem('jannat_conversations') || '[]');
+        let currentPhotoId = null;
+        let currentCategory = 'all';
+        let currentConversation = null;
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEventListeners();
+            renderCategories();
+            renderPhotos();
+            renderGroups();
+            renderConversations();
+        });
+
+        function initializeEventListeners() {
+            // Tab switching
+            document.getElementById('galleryTab').addEventListener('click', () => switchTab('gallery'));
+            document.getElementById('groupsTab').addEventListener('click', () => switchTab('groups'));
+            document.getElementById('chatTab').addEventListener('click', () => switchTab('chat'));
+
+            // Upload functionality
+            const uploadZone = document.getElementById('uploadZone');
+            const fileInput = document.getElementById('fileInput');
+
+            uploadZone.addEventListener('click', () => fileInput.click());
+            uploadZone.addEventListener('dragover', handleDragOver);
+            uploadZone.addEventListener('dragleave', handleDragLeave);
+            uploadZone.addEventListener('drop', handleFileDrop);
+            fileInput.addEventListener('change', handleFileSelect);
+
+            // Modal functionality
+            document.getElementById('closeModal').addEventListener('click', closePhotoModal);
+            document.getElementById('photoModal').addEventListener('click', (e) => {
+                if (e.target.id === 'photoModal') closePhotoModal();
+            });
+
+            // Comment functionality
+            document.getElementById('addCommentBtn').addEventListener('click', addComment);
+            document.getElementById('commentInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addComment();
+            });
+
+            // Sticker functionality
+            document.getElementById('addStickerBtn').addEventListener('click', toggleStickerMenu);
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#stickerMenu') && !e.target.closest('#addStickerBtn')) {
+                    document.getElementById('stickerMenu').style.display = 'none';
+                }
+            });
+
+            // Group functionality
+            document.getElementById('createGroupBtn').addEventListener('click', () => {
+                document.getElementById('createGroupModal').classList.remove('hidden');
+            });
+            document.getElementById('cancelCreateGroup').addEventListener('click', () => {
+                document.getElementById('createGroupModal').classList.add('hidden');
+            });
+            document.getElementById('createGroupForm').addEventListener('submit', createGroup);
+            document.getElementById('passwordProtectGroup').addEventListener('change', toggleGroupPasswordField);
+
+            // Category functionality
+            document.getElementById('addCategoryBtn').addEventListener('click', () => {
+                document.getElementById('addCategoryModal').classList.remove('hidden');
+            });
+            document.getElementById('cancelAddCategory').addEventListener('click', () => {
+                document.getElementById('addCategoryModal').classList.add('hidden');
+            });
+            document.getElementById('addCategoryForm').addEventListener('submit', addCategory);
+            document.getElementById('passwordProtectCategory').addEventListener('change', toggleCategoryPasswordField);
+
+            // Chat functionality
+            document.getElementById('sendMessageBtn').addEventListener('click', sendMessage);
+            document.getElementById('messageInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+
+            // Download functionality
+            document.getElementById('downloadBtn').addEventListener('click', downloadPhoto);
+
+            // Floating button
+            document.getElementById('floatingBtn').addEventListener('click', () => fileInput.click());
+        }
+
+        function switchTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('text-white');
+                btn.classList.add('text-gray-400');
+            });
+            
+            // Hide all sections
+            document.getElementById('gallerySection').classList.add('hidden');
+            document.getElementById('groupsSection').classList.add('hidden');
+            document.getElementById('chatSection').classList.add('hidden');
+
+            // Show selected section and update button
+            switch(tab) {
+                case 'gallery':
+                    document.getElementById('gallerySection').classList.remove('hidden');
+                    document.getElementById('galleryTab').classList.remove('text-gray-400');
+                    document.getElementById('galleryTab').classList.add('text-white');
+                    break;
+                case 'groups':
+                    document.getElementById('groupsSection').classList.remove('hidden');
+                    document.getElementById('groupsTab').classList.remove('text-gray-400');
+                    document.getElementById('groupsTab').classList.add('text-white');
+                    break;
+                case 'chat':
+                    document.getElementById('chatSection').classList.remove('hidden');
+                    document.getElementById('chatTab').classList.remove('text-gray-400');
+                    document.getElementById('chatTab').classList.add('text-white');
+                    break;
+            }
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('dragover');
+        }
+
+        function handleFileDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files);
+            handleFiles(files);
+        }
+
+        function handleFileSelect(e) {
+            const files = Array.from(e.target.files);
+            handleFiles(files);
+        }
+
+        function handleFiles(files) {
+            const imageFiles = files.filter(file => file.type.startsWith('image/'));
+            
+            imageFiles.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const photo = {
+                        id: Date.now() + Math.random(),
+                        name: file.name,
+                        src: e.target.result,
+                        category: currentCategory,
+                        likes: 0,
+                        liked: false,
+                        comments: [],
+                        stickers: [],
+                        uploadDate: new Date().toISOString()
+                    };
+                    
+                    photos.unshift(photo);
+                    savePhotos();
+                    renderPhotos();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function renderPhotos() {
+            const grid = document.getElementById('photoGrid');
+            let filteredPhotos = photos;
+            
+            if (currentCategory !== 'all') {
+                filteredPhotos = photos.filter(photo => photo.category === currentCategory);
+            }
+
+            grid.innerHTML = filteredPhotos.map(photo => `
+                <div class="card-container">
+                    <div class="photo-card cursor-pointer" data-photo-id="${photo.id}">
+                        <img src="${photo.src}" alt="${photo.name}" class="photo-image">
+                        <div class="card-overlay"></div>
+                        <button class="like-button ${photo.liked ? 'liked' : ''}" data-photo-id="${photo.id}">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                        ${photo.stickers.map(sticker => `
+                            <div class="sticker-overlay" style="left: ${sticker.x}%; top: ${sticker.y}%; font-size: 24px;">
+                                ${sticker.emoji}
+                            </div>
+                        `).join('')}
+                        <div class="absolute bottom-4 left-4 right-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-white bg-black bg-opacity-50 px-2 py-1 rounded">
+                                    ${photo.likes} <i class="fas fa-heart ml-1"></i>
+                                </span>
+                                <span class="text-xs text-white bg-black bg-opacity-50 px-2 py-1 rounded">
+                                    ${photo.comments.length} <i class="fas fa-comment ml-1"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Add event listeners
+            grid.querySelectorAll('.photo-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    if (!e.target.closest('.like-button')) {
+                        const photoId = card.dataset.photoId;
+                        openPhotoModal(photoId);
+                    }
+                });
+            });
+
+            grid.querySelectorAll('.like-button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleLike(btn.dataset.photoId);
+                });
+            });
+        }
+
+        function renderCategories() {
+            const container = document.getElementById('categoriesContainer');
+            container.innerHTML = `
+                <button class="px-4 py-2 rounded-lg transition-colors ${currentCategory === 'all' ? 'bg-gradient-to-r from-pink-600 to-purple-600' : 'bg-gray-700 hover:bg-gray-600'}" 
+                        onclick="setCurrentCategory('all')">
+                    All Photos
+                </button>
+                ${categories.map(category => `
+                    <button class="px-4 py-2 rounded-lg transition-colors ${category.passwordProtected ? 'password-protected' : ''} ${currentCategory === category.id ? 'bg-gradient-to-r from-pink-600 to-purple-600' : 'bg-gray-700 hover:bg-gray-600'}" 
+                            onclick="setCurrentCategory('${category.id}', ${category.passwordProtected})">
+                        ${category.name}
+                    </button>
+                `).join('')}
+            `;
+        }
+
+        function setCurrentCategory(categoryId, isPasswordProtected = false) {
+            if (isPasswordProtected) {
+                const password = prompt('Enter password to access this category:');
+                const category = categories.find(c => c.id === categoryId);
+                if (!category || category.password !== password) {
+                    alert('Incorrect password!');
+                    return;
+                }
+            }
+            
+            currentCategory = categoryId;
+            renderCategories();
+            renderPhotos();
+        }
+
+        function toggleLike(photoId) {
+            const photo = photos.find(p => p.id == photoId);
+            if (photo) {
+                photo.liked = !photo.liked;
+                photo.likes += photo.liked ? 1 : -1;
+                savePhotos();
+                renderPhotos();
+            }
+        }
+
+        function openPhotoModal(photoId) {
+            currentPhotoId = photoId;
+            const photo = photos.find(p => p.id == photoId);
+            if (!photo) return;
+
+            document.getElementById('modalImage').src = photo.src;
+            document.getElementById('modalTitle').textContent = photo.name;
+            document.getElementById('likeModalBtn').className = `flex-1 px-4 py-2 rounded-lg transition-colors ${photo.liked ? 'bg-pink-600 text-white' : 'bg-gray-700 hover:bg-pink-600'}`;
+            
+            renderComments(photo.comments);
+            renderStickers(photo.stickers);
+            
+            document.getElementById('photoModal').classList.remove('hidden');
+        }
+
+        function closePhotoModal() {
+            document.getElementById('photoModal').classList.add('hidden');
+            document.getElementById('stickerMenu').style.display = 'none';
+            currentPhotoId = null;
+        }
+
+        function renderComments(comments) {
+            const container = document.getElementById('commentsContainer');
+            container.innerHTML = comments.map(comment => `
+                <div class="bg-gray-700 rounded-lg p-3">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="font-medium text-sm gradient-text">You</span>
+                        <span class="text-xs text-gray-400">${new Date(comment.date).toLocaleDateString()}</span>
+                    </div>
+                    <p class="text-sm">${comment.text}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderStickers(stickers) {
+            const container = document.getElementById('stickersContainer');
+            container.innerHTML = stickers.map(sticker => `
+                <div class="sticker-overlay" style="left: ${sticker.x}%; top: ${sticker.y}%; font-size: 32px;">
+                    ${sticker.emoji}
+                </div>
+            `).join('');
+        }
+
+        function addComment() {
+            const input = document.getElementById('commentInput');
+            const text = input.value.trim();
+            if (!text || !currentPhotoId) return;
+
+            const photo = photos.find(p => p.id == currentPhotoId);
+            if (photo) {
+                photo.comments.push({
+                    text: text,
+                    date: new Date().toISOString()
+                });
+                savePhotos();
+                renderComments(photo.comments);
+                renderPhotos();
+                input.value = '';
+            }
+        }
+
+        function toggleStickerMenu() {
+            const menu = document.getElementById('stickerMenu');
+            const btn = document.getElementById('addStickerBtn');
+            const rect = btn.getBoundingClientRect();
+            
+            menu.style.left = rect.left + 'px';
+            menu.style.top = (rect.bottom + 10) + 'px';
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+
+            // Add sticker selection listeners
+            menu.querySelectorAll('.sticker-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    const emoji = e.target.dataset.sticker;
+                    addSticker(emoji);
+                });
+            });
+        }
+
+        function addSticker(emoji) {
+            if (!currentPhotoId) return;
+
+            const photo = photos.find(p => p.id == currentPhotoId);
+            if (photo) {
+                const sticker = {
+                    emoji: emoji,
+                    x: Math.random() * 70 + 10, // Random position between 10% and 80%
+                    y: Math.random() * 70 + 10
+                };
+                photo.stickers.push(sticker);
+                savePhotos();
+                renderStickers(photo.stickers);
+                renderPhotos();
+                document.getElementById('stickerMenu').style.display = 'none';
+            }
+        }
+
+        function downloadPhoto() {
+            if (!currentPhotoId) return;
+
+            const photo = photos.find(p => p.id == currentPhotoId);
+            if (photo) {
+                const link = document.createElement('a');
+                link.download = photo.name;
+                link.href = photo.src;
+                link.click();
+            }
+        }
+
+        function renderGroups() {
+            const container = document.getElementById('groupsContainer');
+            container.innerHTML = groups.map(group => `
+                <div class="group-card p-6 cursor-pointer ${group.passwordProtected ? 'password-protected' : ''}" 
+                     onclick="openGroup('${group.id}', ${group.passwordProtected})">
+                    <h3 class="text-xl font-bold mb-2 gradient-text">${group.name}</h3>
+                    <p class="text-gray-400 mb-4">${group.description}</p>
+                    <div class="flex justify-between items-center text-sm text-gray-500">
+                        <span>${group.members || 1} members</span>
+                        <span>${new Date(group.created).toLocaleDateString()}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openGroup(groupId, isPasswordProtected) {
+            if (isPasswordProtected) {
+                const password = prompt('Enter group password:');
+                const group = groups.find(g => g.id === groupId);
+                if (!group || group.password !== password) {
+                    alert('Incorrect password!');
+                    return;
+                }
+            }
+            alert('Group functionality would open here with photo sharing capabilities!');
+        }
+
+        function createGroup(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const name = document.getElementById('groupNameInput').value;
+            const description = document.getElementById('groupDescInput').value;
+            const passwordProtected = document.getElementById('passwordProtectGroup').checked;
+            const password = passwordProtected ? document.getElementById('groupPasswordInput').value : null;
+
+            const group = {
+                id: Date.now().toString(),
+                name: name,
+                description: description,
+                passwordProtected: passwordProtected,
+                password: password,
+                created: new Date().toISOString(),
+                members: 1
+            };
+
+            groups.push(group);
+            saveGroups();
+            renderGroups();
+            
+            document.getElementById('createGroupModal').classList.add('hidden');
+            e.target.reset();
+        }
+
+        function toggleGroupPasswordField() {
+            const field = document.getElementById('groupPasswordField');
+            const checkbox = document.getElementById('passwordProtectGroup');
+            field.classList.toggle('hidden', !checkbox.checked);
+        }
+
+        function addCategory(e) {
+            e.preventDefault();
+            const name = document.getElementById('categoryNameInput').value;
+            const passwordProtected = document.getElementById('passwordProtectCategory').checked;
+            const password = passwordProtected ? document.getElementById('categoryPasswordInput').value : null;
+
+            const category = {
+                id: Date.now().toString(),
+                name: name,
+                passwordProtected: passwordProtected,
+                password: password
+            };
+
+            categories.push(category);
+            saveCategories();
+            renderCategories();
+            
+            document.getElementById('addCategoryModal').classList.add('hidden');
+            e.target.reset();
+        }
+
+        function toggleCategoryPasswordField() {
+            const field = document.getElementById('categoryPasswordField');
+            const checkbox = document.getElementById('passwordProtectCategory');
+            field.classList.toggle('hidden', !checkbox.checked);
+        }
+
+        function renderConversations() {
+            const container = document.getElementById('chatList');
+            container.innerHTML = conversations.map(conv => `
+                <div class="bg-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-600 transition-colors" 
+                     onclick="openConversation('${conv.id}')">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-pink-600 to-purple-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-medium">${conv.name}</h4>
+                            <p class="text-xs text-gray-400">${conv.lastMessage || 'No messages yet'}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Add default conversation if none exist
+            if (conversations.length === 0) {
+                const defaultConv = {
+                    id: 'general',
+                    name: 'General Chat',
+                    messages: [],
+                    lastMessage: 'Welcome to Jannat!'
+                };
+                conversations.push(defaultConv);
+                saveConversations();
+                renderConversations();
+            }
+        }
+
+        function openConversation(convId) {
+            currentConversation = convId;
+            const conv = conversations.find(c => c.id === convId);
+            if (!conv) return;
+
+            document.getElementById('chatHeader').innerHTML = `
+                <h3 class="text-lg font-bold gradient-text">${conv.name}</h3>
+            `;
+
+            renderMessages(conv.messages);
+        }
+
+        function renderMessages(messages) {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = messages.map(msg => `
+                <div class="chat-bubble ${msg.sent ? 'sent' : 'received'}">
+                    <p>${msg.text}</p>
+                    <span class="text-xs opacity-75">${new Date(msg.timestamp).toLocaleTimeString()}</span>
+                </div>
+            `).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text || !currentConversation) return;
+
+            const conv = conversations.find(c => c.id === currentConversation);
+            if (conv) {
+                const message = {
+                    text: text,
+                    sent: true,
+                    timestamp: new Date().toISOString()
+                };
+                conv.messages.push(message);
+                conv.lastMessage = text;
+                saveConversations();
+                renderMessages(conv.messages);
+                renderConversations();
+                input.value = '';
+            }
+        }
+
+        // Data persistence functions
+        function savePhotos() {
+            localStorage.setItem('jannat_photos', JSON.stringify(photos));
+        }
+
+        function saveCategories() {
+            localStorage.setItem('jannat_categories', JSON.stringify(categories));
+        }
+
+        function saveGroups() {
+            localStorage.setItem('jannat_groups', JSON.stringify(groups));
+        }
+
+        function saveConversations() {
+            localStorage.setItem('jannat_conversations', JSON.stringify(conversations));
+        }
+    </script>
+</body>
+</html>
